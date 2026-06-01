@@ -1,0 +1,1123 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Worry Meter">
+  <meta name="theme-color" content="#0D0D12">
+  <link rel="apple-touch-icon" sizes="180x180" href="wm.svg">
+  <link rel="icon" type="image/svg+xml" href="wm.svg">
+  <link rel="manifest" href="/manifest.json">
+  <title>Worry Meter</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0D0D12;
+      --card: #14151C;
+      --card2: #1C1D27;
+      --text: #E8EAF0;
+      --muted: #5A5F72;
+      --border: #1F2030;
+      --accent: #F59E0B;
+      --sh: 0 4px 32px rgba(0,0,0,.5);
+      --r: 16px;
+    }
+    body.light {
+      --bg: #F0F2F8;
+      --card: #FFFFFF;
+      --card2: #F5F7FF;
+      --text: #0D0D12;
+      --muted: #7B8099;
+      --border: #E0E4F0;
+      --sh: 0 4px 24px rgba(0,0,0,.08);
+    }
+    *,*::before,*::after { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent }
+    html { height:-webkit-fill-available }
+    body {
+      font-family:'DM Sans',-apple-system,sans-serif;
+      background:var(--bg); color:var(--text);
+      min-height:100vh; min-height:-webkit-fill-available;
+      padding-top:env(safe-area-inset-top,0px);
+      padding-bottom:env(safe-area-inset-bottom,0px);
+      padding-left:env(safe-area-inset-left,0px);
+      padding-right:env(safe-area-inset-right,0px);
+      overscroll-behavior:none;
+    }
+    .hidden { display:none !important }
+
+    /* HEADER */
+    .hdr {
+      background:var(--card); border-bottom:1px solid var(--border);
+      padding:14px 16px; display:flex; align-items:center;
+      justify-content:space-between; position:sticky; top:0; z-index:200;
+    }
+    .hdr-brand { display:flex; align-items:center; gap:10px }
+    .hdr-logo {
+      width:34px; height:34px; border-radius:10px;
+      background:linear-gradient(135deg,#F59E0B,#EF4444);
+      display:flex; align-items:center; justify-content:center; font-size:18px;
+    }
+    .hdr h1 { font-family:'Space Mono',monospace; font-size:17px; font-weight:700; letter-spacing:-.3px }
+    .hdr h1 span { color:var(--accent) }
+    .hdr-icon-btn {
+      background:var(--card2); border:1px solid var(--border); color:var(--text);
+      width:34px; height:34px; border-radius:10px; font-size:15px; cursor:pointer;
+      display:flex; align-items:center; justify-content:center; transition:background .15s;
+    }
+    .hdr-icon-btn:active { background:var(--border) }
+
+    /* SECTION */
+    .sec { margin:12px 12px 0; background:var(--card); border-radius:var(--r); border:1px solid var(--border); overflow:hidden }
+    .sec-title {
+      font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:1px;
+      color:var(--muted); padding:12px 16px 8px; border-bottom:1px solid var(--border);
+      font-family:'Space Mono',monospace;
+    }
+
+    /* PEOPLE GRID */
+    .people-grid {
+      display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr));
+      gap:10px; padding:12px;
+    }
+    .person-card {
+      background:var(--card); border:1px solid var(--border); border-radius:var(--r);
+      padding:16px 14px 12px; cursor:pointer;
+      display:flex; flex-direction:column; gap:5px;
+      transition:border-color .15s, box-shadow .15s, transform .1s;
+    }
+    .person-card:active { transform:scale(.97); filter:brightness(.9) }
+    .person-card:hover { border-color:var(--accent); box-shadow:0 0 0 1px var(--accent) }
+    .pc-top { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:4px }
+    .pc-emoji { font-size:32px; line-height:1 }
+    .pc-fill-badge { font-size:13px; font-weight:700; font-family:'Space Mono',monospace }
+    .pc-name { font-size:14px; font-weight:700; line-height:1.2 }
+    .pc-relation { font-size:11px; color:var(--muted) }
+    .meter-bar { height:6px; background:var(--border); border-radius:3px; overflow:hidden; margin-top:6px }
+    .meter-fill { height:100%; border-radius:3px; transition:width .4s ease; min-width:2px }
+    .pc-log-btn {
+      margin-top:10px; padding:7px; background:transparent;
+      border:1px solid var(--border); border-radius:8px;
+      font-size:12px; font-weight:700; color:var(--accent); cursor:pointer;
+      font-family:'Space Mono',monospace; transition:background .15s;
+    }
+    .pc-log-btn:active { background:var(--card2) }
+
+    /* ADD PERSON BUTTON */
+    .cfg-add-btn {
+      display:flex; align-items:center; justify-content:center; gap:6px;
+      width:100%; padding:11px; margin:10px 0 0;
+      background:transparent; border:1.5px dashed var(--border); border-radius:10px;
+      font-size:13px; font-weight:700; color:var(--accent); cursor:pointer;
+      font-family:'Space Mono',monospace; transition:background .15s;
+    }
+    .cfg-add-btn:active { background:rgba(245,158,11,.06) }
+
+    /* EMPTY STATE */
+    .empty-state {
+      display:flex; flex-direction:column; align-items:center; justify-content:center;
+      padding:60px 24px; text-align:center; gap:12px;
+    }
+    .empty-icon { font-size:56px; line-height:1 }
+    .empty-title { font-size:18px; font-weight:700 }
+    .empty-sub { font-size:14px; color:var(--muted); line-height:1.6 }
+
+    /* DETAIL OVERLAY */
+    #detail-overlay {
+      position:fixed; inset:0; z-index:850; background:var(--bg);
+      overflow-y:auto; display:none; flex-direction:column;
+    }
+    #detail-overlay.show { display:flex }
+    .detail-head {
+      position:sticky; top:0; background:var(--card); border-bottom:1px solid var(--border);
+      padding:14px 16px; display:flex; align-items:center; justify-content:space-between; z-index:2;
+    }
+    .detail-back {
+      background:var(--card2); border:1px solid var(--border); color:var(--text);
+      border-radius:10px; padding:8px 14px; font-size:13px; font-weight:700;
+      cursor:pointer; font-family:'Space Mono',monospace;
+    }
+    .detail-hero { text-align:center; padding:28px 20px 10px }
+    .detail-big-emoji { font-size:52px; line-height:1; margin-bottom:10px }
+    .d-name { font-size:22px; font-weight:800 }
+    .d-relation { font-size:13px; color:var(--muted); margin-top:4px }
+    .big-meter { width:200px; max-width:80%; margin:20px auto 0; display:block }
+    .detail-log-btn {
+      display:block; width:calc(100% - 32px); margin:16px 16px 0;
+      padding:14px; background:var(--accent); color:#000;
+      border:none; border-radius:12px; font-size:15px; font-weight:800;
+      cursor:pointer; font-family:'Space Mono',monospace;
+    }
+    .detail-log-btn:active { filter:brightness(.9) }
+    .detail-stats {
+      display:flex; gap:10px; padding:16px 16px 4px;
+    }
+    .stat-box {
+      flex:1; background:var(--card); border:1px solid var(--border);
+      border-radius:12px; padding:12px; text-align:center;
+    }
+    .stat-val { font-size:20px; font-weight:700; font-family:'Space Mono',monospace; color:var(--accent) }
+    .stat-label { font-size:10px; color:var(--muted); margin-top:4px; font-family:'Space Mono',monospace; text-transform:uppercase; letter-spacing:.5px }
+
+    /* WORRY LIST */
+    .worry-row {
+      display:flex; align-items:flex-start; gap:10px;
+      padding:12px 14px; border-bottom:1px solid var(--border);
+    }
+    .worry-row:last-child { border-bottom:none }
+    .worry-cat-emoji { font-size:22px; flex-shrink:0; margin-top:1px }
+    .worry-row-text { flex:1; min-width:0 }
+    .worry-row-main { display:flex; align-items:center; gap:8px; flex-wrap:wrap }
+    .worry-intensity { font-size:13px; font-weight:700; font-family:'Space Mono',monospace }
+    .worry-cat-label { font-size:13px; font-weight:600 }
+    .worry-desc { font-size:12px; color:var(--muted); margin-top:3px; line-height:1.4 }
+    .worry-date { font-size:11px; color:var(--muted); margin-top:3px; font-family:'Space Mono',monospace }
+    .worry-row-right { flex-shrink:0; display:flex; flex-direction:column; align-items:flex-end; gap:4px }
+    .outcome-badge {
+      font-size:10px; font-weight:700; padding:3px 8px; border-radius:99px;
+      font-family:'Space Mono',monospace; white-space:nowrap;
+    }
+    .outcome-happened { background:rgba(239,68,68,.15); color:#EF4444; border:1px solid rgba(239,68,68,.3) }
+    .outcome-didnt { background:rgba(34,197,94,.15); color:#22C55E; border:1px solid rgba(34,197,94,.3) }
+    .outcome-btns { display:flex; flex-direction:column; gap:3px }
+    .outcome-btns button {
+      font-size:10px; font-weight:700; padding:3px 7px; border-radius:6px;
+      border:1px solid var(--border); background:var(--card2); color:var(--muted);
+      cursor:pointer; font-family:'Space Mono',monospace; white-space:nowrap;
+      transition:background .1s;
+    }
+    .outcome-btns button:active { background:var(--border) }
+    .worry-del-btn {
+      font-size:11px; background:none; border:none; color:var(--muted);
+      cursor:pointer; padding:2px 4px; transition:color .1s;
+    }
+    .worry-del-btn:hover { color:#EF4444 }
+    .empty-worries { padding:24px; text-align:center; color:var(--muted); font-size:13px }
+
+    /* MODAL SHARED */
+    .modal-overlay {
+      position:fixed; inset:0; z-index:900; display:flex;
+      align-items:center; justify-content:center;
+      background:rgba(0,0,0,0); pointer-events:none;
+      transition:background .2s;
+    }
+    .modal-overlay.show {
+      background:rgba(0,0,0,.7); pointer-events:auto;
+      backdrop-filter:blur(6px);
+    }
+    .modal-card {
+      background:var(--card); border:1px solid var(--border); border-radius:24px;
+      padding:24px 22px; box-shadow:0 20px 60px rgba(0,0,0,.6);
+      transform:scale(.7) translateY(30px); opacity:0;
+      transition:transform .3s cubic-bezier(.34,1.56,.64,1), opacity .25s;
+      width:90%; max-width:360px; max-height:90dvh; overflow-y:auto;
+    }
+    .modal-overlay.show .modal-card { transform:scale(1) translateY(0); opacity:1 }
+    .modal-title { font-size:18px; font-weight:800; margin-bottom:16px; text-align:center }
+    .modal-label {
+      font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.5px;
+      color:var(--muted); margin-bottom:8px; font-family:'Space Mono',monospace;
+    }
+    .modal-label-opt { font-weight:400; text-transform:none; letter-spacing:0 }
+    .modal-label-val { color:var(--accent) }
+    .modal-error { color:#EF4444; font-size:12px; margin-top:8px; min-height:1.4em }
+    .popup-save {
+      display:block; width:100%; padding:13px; margin-top:12px;
+      background:var(--accent); color:#000; border:none; border-radius:12px;
+      font-size:15px; font-weight:800; cursor:pointer; font-family:'Space Mono',monospace;
+    }
+    .popup-save:active { filter:brightness(.9) }
+    .popup-save:disabled { opacity:.5; cursor:default }
+    .popup-cancel {
+      display:block; width:100%; padding:10px; margin-top:6px;
+      background:transparent; border:none; font-size:13px; font-weight:600;
+      color:var(--muted); cursor:pointer; border-radius:10px;
+    }
+    .popup-cancel:active { background:var(--card2) }
+
+    /* LOG WORRY MODAL */
+    .log-for-row {
+      font-size:13px; color:var(--muted); text-align:center; margin-bottom:14px;
+    }
+    .log-for-row strong { color:var(--text) }
+    .log-person-picker { margin-bottom:14px }
+    .log-picker-label { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:var(--muted); margin-bottom:8px; font-family:'Space Mono',monospace }
+    .person-pick-btn {
+      display:block; width:100%; padding:10px 12px; margin-bottom:5px;
+      background:var(--card2); border:1px solid var(--border); border-radius:10px;
+      font-size:14px; font-weight:600; color:var(--text); cursor:pointer; text-align:left;
+      transition:border-color .1s;
+    }
+    .person-pick-btn:active { border-color:var(--accent) }
+
+    /* CATEGORY CHIPS */
+    .cat-chips { display:flex; flex-wrap:wrap; gap:7px; margin-bottom:16px }
+    .cat-chip {
+      padding:6px 12px; border-radius:99px; border:1.5px solid var(--border);
+      background:var(--card2); color:var(--muted); font-size:12px; font-weight:700;
+      cursor:pointer; transition:all .15s; font-family:'Space Mono',monospace;
+    }
+    .cat-chip.selected {
+      background:rgba(245,158,11,.15); border-color:var(--accent); color:var(--accent);
+    }
+    .cat-chip:active { filter:brightness(.9) }
+
+    /* INTENSITY SLIDER */
+    .dur-slider {
+      width:100%; -webkit-appearance:none; appearance:none;
+      height:5px; border-radius:3px; background:var(--border); outline:none; cursor:pointer; margin-bottom:6px;
+    }
+    .dur-slider::-webkit-slider-thumb {
+      -webkit-appearance:none; width:22px; height:22px; border-radius:50%;
+      background:var(--accent); cursor:pointer; box-shadow:0 1px 6px rgba(245,158,11,.4);
+    }
+    .dur-slider::-moz-range-thumb {
+      width:22px; height:22px; border-radius:50%; background:var(--accent);
+      cursor:pointer; border:none; box-shadow:0 1px 6px rgba(245,158,11,.4);
+    }
+    .intensity-desc { font-weight:400; font-style:italic; text-transform:none; letter-spacing:0; color:var(--muted) }
+
+    /* NOTE INPUT */
+    .note-inp {
+      width:100%; padding:10px 12px; border:1px solid var(--border);
+      border-radius:10px; background:var(--card2); color:var(--text);
+      font-size:14px; font-family:inherit; resize:none; min-height:64px;
+    }
+    .note-inp:focus { outline:none; border-color:var(--accent) }
+
+    /* ADD/EDIT PERSON MODAL */
+    .label-inp {
+      display:block; width:100%; padding:10px 12px; border:1px solid var(--border);
+      border-radius:8px; background:var(--card2); color:var(--text);
+      font-size:14px; font-family:inherit;
+    }
+    .label-inp:focus { outline:none; border-color:var(--accent) }
+    .emoji-inp {
+      display:block; width:60px; padding:8px 4px; border:1px solid var(--border);
+      border-radius:8px; background:var(--card2); color:var(--text);
+      font-size:22px; text-align:center;
+    }
+    .emoji-inp:focus { outline:none; border-color:var(--accent) }
+    .form-btns { display:flex; gap:6px }
+    .btn-save {
+      flex:1; padding:10px; background:var(--accent); color:#000;
+      border:none; border-radius:8px; font-size:13px; font-weight:700;
+      cursor:pointer; font-family:'Space Mono',monospace;
+    }
+    .btn-save:active { filter:brightness(.9) }
+    .btn-cancel {
+      padding:10px 14px; background:var(--card2); border:1px solid var(--border);
+      color:var(--muted); border-radius:8px; font-size:13px; cursor:pointer;
+    }
+    .btn-del {
+      padding:10px; background:rgba(239,68,68,.1); border:1px solid rgba(239,68,68,.2);
+      color:#EF4444; border-radius:8px; font-size:13px; font-weight:700; cursor:pointer;
+    }
+    .btn-del:active { background:rgba(239,68,68,.2) }
+
+    /* CONFIG CARD */
+    #config-card {
+      display:none; position:fixed; top:68px; right:8px; z-index:800;
+      background:var(--card); border:1px solid var(--border); border-radius:20px;
+      box-shadow:0 8px 32px rgba(0,0,0,.4); min-width:260px; max-width:310px;
+      max-height:calc(100dvh - 80px); overflow-y:auto; padding-bottom:8px;
+    }
+    #config-card.show { display:block }
+    .cfg-divider { height:1px; background:var(--border); margin:8px 0 }
+    #user-menu-header { padding:16px 16px 8px }
+    #user-menu-name { font-size:.9rem; font-weight:700; color:var(--text); line-height:1.3 }
+    #user-menu-email { font-size:.75rem; color:var(--muted); margin-top:2px }
+    #cfg-sign-out-btn {
+      display:block; width:calc(100% - 32px); margin:4px 16px 8px; padding:10px;
+      background:none; border:1px solid var(--border); border-radius:10px;
+      color:var(--muted); font-size:.85rem; font-weight:600; font-family:inherit; cursor:pointer;
+    }
+    #cfg-sign-out-btn:hover { background:var(--card2) }
+    .cfg-section { padding:12px 16px 4px }
+    .cfg-section-label { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.8px; color:var(--muted); margin-bottom:8px; font-family:'Space Mono',monospace }
+    .member-toggle-row {
+      display:flex; align-items:center; justify-content:space-between;
+      padding:10px 14px; border-radius:12px; background:var(--card2); border:1px solid var(--border);
+    }
+    .member-toggle-left { display:flex; align-items:center; gap:10px; font-size:14px; font-weight:600 }
+    .toggle-wrap { position:relative; width:46px; height:27px; flex-shrink:0 }
+    .toggle-wrap input { opacity:0; width:0; height:0; position:absolute }
+    .toggle-track { position:absolute; inset:0; border-radius:99px; background:var(--border); cursor:pointer; transition:background .2s }
+    .toggle-wrap input:checked + .toggle-track { background:var(--accent) }
+    .toggle-thumb { position:absolute; width:23px; height:23px; border-radius:50%; background:#fff; top:2px; left:2px; transition:transform .2s; box-shadow:0 1px 4px rgba(0,0,0,.3); pointer-events:none }
+    .toggle-wrap input:checked ~ .toggle-thumb { transform:translateX(19px) }
+
+    /* TOAST */
+    #toasts {
+      position:fixed; bottom:calc(env(safe-area-inset-bottom,0px)+22px);
+      left:50%; transform:translateX(-50%); z-index:1000;
+      display:flex; flex-direction:column; align-items:center; gap:7px; pointer-events:none;
+    }
+    .toast {
+      background:rgba(20,21,28,.95); color:#fff; border:1px solid var(--border);
+      padding:10px 20px; border-radius:99px; font-size:13px; font-weight:600;
+      backdrop-filter:blur(12px); white-space:nowrap;
+      animation:tin .25s ease, tout .25s ease 1.75s forwards;
+      font-family:'Space Mono',monospace;
+    }
+    @keyframes tin { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+    @keyframes tout { from{opacity:1} to{opacity:0} }
+
+    /* LOGIN GATE */
+    #login-gate {
+      position:fixed; inset:0; z-index:9000; background:var(--bg);
+      display:flex; align-items:center; justify-content:center;
+    }
+    #login-gate-inner { text-align:center; max-width:340px; width:100%; padding:40px 20px }
+    #login-gate-title { font-size:1.8rem; font-weight:800; color:var(--accent); letter-spacing:-.5px; margin-bottom:6px; font-family:'Space Mono',monospace }
+    #login-gate-sub { color:var(--muted); font-size:.9rem; margin-bottom:28px; line-height:1.5 }
+    #login-email, #login-code {
+      display:block; width:100%; padding:12px 14px; border-radius:8px;
+      border:1px solid var(--border); background:var(--card2); color:var(--text);
+      font-size:.95rem; font-family:inherit; margin-bottom:10px; text-align:center;
+    }
+    #login-email:focus, #login-code:focus { outline:none; border-color:var(--accent) }
+    #send-code-btn, #verify-code-btn {
+      display:block; width:100%; padding:13px; border-radius:10px; border:none;
+      background:var(--accent); color:#000; cursor:pointer; font-size:.95rem;
+      font-weight:700; font-family:'Space Mono',monospace; transition:opacity .15s;
+    }
+    #send-code-btn:hover, #verify-code-btn:hover { opacity:.85 }
+    #send-code-btn:disabled, #verify-code-btn:disabled { opacity:.5; cursor:default }
+    #otp-sent-msg { font-size:.85rem; color:var(--muted); margin-bottom:14px }
+    #otp-back-btn { background:none; border:none; color:var(--muted); font-size:.8rem; cursor:pointer; margin-top:10px; text-decoration:underline; font-family:inherit }
+    #otp-error { color:#EF4444; font-size:.82rem; margin-top:8px; min-height:1.2em }
+    #google-signin-btn {
+      display:flex; align-items:center; justify-content:center; gap:10px;
+      width:100%; padding:13px; border-radius:10px; border:1px solid var(--border);
+      background:var(--card); color:var(--text); cursor:pointer; font-size:.95rem;
+      font-weight:600; font-family:inherit; transition:opacity .15s; margin-bottom:18px;
+    }
+    #google-signin-btn:hover { opacity:.8 }
+    .auth-divider { display:flex; align-items:center; gap:10px; margin-bottom:18px; color:var(--muted); font-size:.8rem }
+    .auth-divider::before, .auth-divider::after { content:''; flex:1; height:1px; background:var(--border) }
+
+    .bottom-pad { height:calc(env(safe-area-inset-bottom,0px)+32px) }
+  </style>
+
+  <script src="supabase.umd.js"></script>
+  <script type="module">
+    const { createClient } = window.supabase;
+    const sb = createClient(
+      'https://nfvxmkknkxysjksyhbek.supabase.co',
+      'sb_publishable_Lju5epgXoT5HFOoyZdjGYw_ksPesDaB'
+    );
+    window._supabase = sb;
+
+    let otpEmail = '';
+    let _booted = false;
+
+    function showLoginState() {
+      _booted = false;
+      document.getElementById('login-gate').style.display = 'flex';
+      document.getElementById('otp-email-step').style.display = '';
+      document.getElementById('otp-code-step').style.display = 'none';
+      document.getElementById('otp-error').textContent = '';
+      const btn = document.getElementById('send-code-btn');
+      btn.disabled = false; btn.textContent = 'Send code';
+    }
+
+    function bootOnce(user) {
+      if (_booted) return;
+      _booted = true;
+      document.getElementById('login-gate').style.display = 'none';
+      if (typeof window._bootApp === 'function') window._bootApp(user);
+    }
+
+    document.getElementById('google-signin-btn').addEventListener('click', async () => {
+      await sb.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin + window.location.pathname,
+          queryParams: { prompt: 'select_account' }
+        }
+      });
+    });
+
+    function otpError(msg) { document.getElementById('otp-error').textContent = msg }
+
+    document.getElementById('send-code-btn').addEventListener('click', async () => {
+      const email = document.getElementById('login-email').value.trim();
+      if (!email) return;
+      const btn = document.getElementById('send-code-btn');
+      btn.disabled = true; btn.textContent = 'Sending…';
+      otpError('');
+      const { error } = await sb.auth.signInWithOtp({ email, options: { shouldCreateUser: false } });
+      if (error) {
+        otpError(error.message || 'Could not send code.');
+        btn.disabled = false; btn.textContent = 'Send code';
+        return;
+      }
+      otpEmail = email;
+      document.getElementById('otp-email-step').style.display = 'none';
+      document.getElementById('otp-code-step').style.display = '';
+      document.getElementById('login-code').focus();
+    });
+
+    document.getElementById('login-email').addEventListener('keydown', e => {
+      if (e.key === 'Enter') document.getElementById('send-code-btn').click();
+    });
+
+    document.getElementById('verify-code-btn').addEventListener('click', async () => {
+      const code = document.getElementById('login-code').value.trim();
+      if (!code) return;
+      const btn = document.getElementById('verify-code-btn');
+      btn.disabled = true; btn.textContent = 'Verifying…';
+      otpError('');
+      const { error } = await sb.auth.verifyOtp({ email: otpEmail, token: code, type: 'email' });
+      if (error) {
+        otpError('Invalid or expired code.');
+        btn.disabled = false; btn.textContent = 'Sign in';
+      }
+    });
+
+    document.getElementById('login-code').addEventListener('keydown', e => {
+      if (e.key === 'Enter') document.getElementById('verify-code-btn').click();
+    });
+
+    document.getElementById('otp-back-btn').addEventListener('click', () => {
+      document.getElementById('otp-code-step').style.display = 'none';
+      document.getElementById('otp-email-step').style.display = '';
+      document.getElementById('login-code').value = '';
+      otpError('');
+    });
+
+    document.getElementById('cfg-sign-out-btn').addEventListener('click', async () => {
+      await sb.auth.signOut();
+      showLoginState();
+    });
+
+    sb.auth.onAuthStateChange((event, session) => {
+      if (!session?.user) { showLoginState(); return; }
+      bootOnce(session.user);
+    });
+
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js'));
+    }
+  </script>
+</head>
+
+<body>
+
+  <!-- Login gate -->
+  <div id="login-gate">
+    <div id="login-gate-inner">
+      <div id="login-gate-title">😟 Worry Meter</div>
+      <div id="login-gate-sub">Sign in to continue</div>
+      <button id="google-signin-btn">
+        <svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
+          <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
+          <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z" fill="#34A853"/>
+          <path d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/>
+          <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 6.29C4.672 4.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
+        </svg>
+        Continue with Google
+      </button>
+      <div class="auth-divider">or</div>
+      <div id="otp-email-step">
+        <input type="email" id="login-email" placeholder="Email address" autocomplete="email">
+        <button id="send-code-btn">Send code</button>
+      </div>
+      <div id="otp-code-step" style="display:none">
+        <div id="otp-sent-msg">Code sent — check your email</div>
+        <input type="text" id="login-code" placeholder="8-digit code" maxlength="8" inputmode="numeric" autocomplete="one-time-code">
+        <button id="verify-code-btn">Sign in</button>
+        <br><button id="otp-back-btn">Use different email</button>
+      </div>
+      <div id="otp-error"></div>
+    </div>
+  </div>
+
+  <div id="toasts"></div>
+
+  <!-- Header -->
+  <div class="hdr">
+    <div class="hdr-brand">
+      <div class="hdr-logo">😟</div>
+      <h1>Worry <span>Meter</span></h1>
+    </div>
+    <button class="hdr-icon-btn" id="user-btn" title="Account">👤</button>
+  </div>
+
+  <!-- Main content -->
+  <div id="people-grid" class="people-grid"></div>
+  <div id="empty-state" class="empty-state hidden">
+    <div class="empty-icon">😮‍💨</div>
+    <div class="empty-title">No one here yet</div>
+    <div class="empty-sub">Add yourself and the people around you<br>to start tracking worry</div>
+  </div>
+  <div style="padding:0 12px 8px">
+    <button class="cfg-add-btn" id="add-person-btn" onclick="openAddPerson()">＋ Add person</button>
+  </div>
+  <div class="bottom-pad"></div>
+
+  <!-- Person detail overlay -->
+  <div id="detail-overlay">
+    <div class="detail-head">
+      <button class="detail-back" onclick="closeDetail()">← Back</button>
+      <button class="hdr-icon-btn" id="detail-edit-btn" onclick="editCurrentPerson()" title="Edit person">✏️</button>
+    </div>
+    <div class="detail-hero">
+      <div id="detail-emoji" class="detail-big-emoji">😟</div>
+      <div id="detail-name" class="d-name"></div>
+      <div id="detail-relation" class="d-relation"></div>
+      <svg class="big-meter" viewBox="0 0 200 115">
+        <path d="M 15 105 A 85 85 0 0 0 185 105" fill="none" stroke="var(--border)" stroke-width="14" stroke-linecap="round"/>
+        <path id="meter-arc-fill" d="" fill="none" stroke="#22C55E" stroke-width="14" stroke-linecap="round"/>
+        <text id="meter-fill-pct" x="100" y="90" text-anchor="middle" font-size="40" font-weight="700" font-family="'Space Mono', monospace" fill="var(--text)">0</text>
+        <text x="100" y="110" text-anchor="middle" font-size="11" fill="var(--muted)" font-family="'Space Mono', monospace">% worry load</text>
+      </svg>
+    </div>
+    <button class="detail-log-btn" onclick="openLogFromDetail()">＋ Log worry</button>
+    <div class="detail-stats">
+      <div class="stat-box"><div id="stat-total" class="stat-val">—</div><div class="stat-label">Total</div></div>
+      <div class="stat-box"><div id="stat-never" class="stat-val">—</div><div class="stat-label">Didn't happen</div></div>
+      <div class="stat-box"><div id="stat-avg" class="stat-val">—</div><div class="stat-label">Avg intensity</div></div>
+    </div>
+    <div class="sec" style="margin:12px 12px 0">
+      <div class="sec-title" id="worry-list-title">WORRY LOG</div>
+      <div id="worry-list"></div>
+    </div>
+    <div class="bottom-pad"></div>
+  </div>
+
+  <!-- Log worry modal -->
+  <div id="log-modal" class="modal-overlay" onclick="closeLogModal()">
+    <div class="modal-card" onclick="event.stopPropagation()">
+      <div class="modal-title">Log a worry</div>
+      <div id="log-for-row" class="log-for-row">for <strong id="log-for-name"></strong></div>
+      <div id="log-person-picker" class="log-person-picker"></div>
+      <div class="modal-label" style="margin-bottom:8px">Category</div>
+      <div class="cat-chips" id="cat-chips">
+        <button class="cat-chip" data-cat="health" onclick="selectCat(this)">🏥 Health</button>
+        <button class="cat-chip" data-cat="money" onclick="selectCat(this)">💰 Money</button>
+        <button class="cat-chip" data-cat="relationships" onclick="selectCat(this)">💝 Relationships</button>
+        <button class="cat-chip" data-cat="work" onclick="selectCat(this)">💼 Work</button>
+        <button class="cat-chip" data-cat="family" onclick="selectCat(this)">👨‍👩‍👧 Family</button>
+        <button class="cat-chip" data-cat="world" onclick="selectCat(this)">🌍 World</button>
+        <button class="cat-chip" data-cat="home" onclick="selectCat(this)">🏠 Home</button>
+        <button class="cat-chip" data-cat="other" onclick="selectCat(this)">❓ Other</button>
+      </div>
+      <div class="modal-label">
+        Intensity <span id="intensity-val" class="modal-label-val">5</span>/10
+        &nbsp;<span id="intensity-desc" class="intensity-desc">moderate</span>
+      </div>
+      <input type="range" id="intensity-slider" class="dur-slider" min="1" max="10" step="1" value="5" oninput="updateIntensity()">
+      <div class="modal-label" style="margin-top:12px">
+        Note <span class="modal-label-opt">optional</span>
+      </div>
+      <textarea id="log-description" class="note-inp" maxlength="500" placeholder="What's the worry?"></textarea>
+      <div id="log-error" class="modal-error"></div>
+      <button class="popup-save" id="save-worry-btn" onclick="saveWorry()">Save worry</button>
+      <button class="popup-cancel" onclick="closeLogModal()">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Add/edit person modal -->
+  <div id="person-modal" class="modal-overlay" onclick="closePersonModal()">
+    <div class="modal-card" onclick="event.stopPropagation()">
+      <div class="modal-title" id="person-modal-title">Add person</div>
+      <div class="modal-label">Name</div>
+      <input type="text" id="person-name-inp" class="label-inp" maxlength="60" placeholder="e.g. Mom, Dad, Me">
+      <div class="modal-label" style="margin-top:12px">Relation <span class="modal-label-opt">optional</span></div>
+      <input type="text" id="person-relation-inp" class="label-inp" maxlength="40" placeholder="e.g. Partner, Parent, Me">
+      <div class="modal-label" style="margin-top:12px">Emoji</div>
+      <input type="text" id="person-emoji-inp" class="emoji-inp" maxlength="8" placeholder="😟">
+      <div id="person-error" class="modal-error"></div>
+      <div class="form-btns" style="margin-top:16px">
+        <button class="btn-save" id="save-person-btn" onclick="savePerson()">Save</button>
+        <button class="btn-cancel" onclick="closePersonModal()">Cancel</button>
+      </div>
+      <button class="btn-del" id="del-person-btn" onclick="deletePerson()" style="width:100%;margin-top:8px;display:none">Delete person &amp; all entries</button>
+    </div>
+  </div>
+
+  <!-- Config card (user menu) -->
+  <div id="config-card">
+    <div id="user-menu-header">
+      <div id="user-menu-name"></div>
+      <div id="user-menu-email"></div>
+    </div>
+    <div class="cfg-divider"></div>
+    <div class="cfg-section">
+      <div class="cfg-section-label">Appearance</div>
+      <div class="member-toggle-row">
+        <div class="member-toggle-left">
+          <span id="themeEmoji">☀️</span>
+          <span id="themeLabel">Light mode</span>
+        </div>
+        <label class="toggle-wrap">
+          <input type="checkbox" id="lightToggle" onchange="setLight(this.checked)">
+          <div class="toggle-track"></div>
+          <div class="toggle-thumb"></div>
+        </label>
+      </div>
+    </div>
+    <div class="cfg-divider"></div>
+    <button id="cfg-sign-out-btn">Sign out</button>
+  </div>
+
+  <script>
+    // ── State ──
+    let _people = [];
+    let _worries = {};
+    let _detailPerson = null;
+    let _logForPerson = null;
+    let _editPerson = null;
+
+    // ── API ──
+    async function api(action, { body, params } = {}) {
+      const { data: { session } } = await window._supabase.auth.getSession();
+      const token = session?.access_token;
+      if (!token) throw new Error('Not signed in');
+
+      let url = `/api?action=${action}`;
+      if (params) Object.entries(params).forEach(([k, v]) => url += `&${k}=${encodeURIComponent(v)}`);
+
+      const res = await fetch(url, {
+        method: body ? 'POST' : 'GET',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+        body: body ? JSON.stringify(body) : undefined
+      });
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error || 'API error');
+      return data;
+    }
+
+    // ── Meter helpers ──
+    function meterColor(fill) {
+      if (fill < 30) return '#22C55E';
+      if (fill < 60) return '#F59E0B';
+      if (fill < 80) return '#F97316';
+      return '#EF4444';
+    }
+
+    function meterArcPath(f) {
+      if (f <= 0.001) return '';
+      const cx = 100, cy = 105, r = 85;
+      if (f >= 0.999) {
+        return `M 15 105 A 85 85 0 0 0 100 20 A 85 85 0 0 0 185 105`;
+      }
+      const angle = Math.PI * (1 - f);
+      const ex = (cx + r * Math.cos(angle)).toFixed(1);
+      const ey = (cy - r * Math.sin(angle)).toFixed(1);
+      return `M 15 105 A 85 85 0 0 0 ${ex} ${ey}`;
+    }
+
+    // ── Escaping ──
+    function esc(s) {
+      return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    // ── People ──
+    async function loadPeople() {
+      try {
+        const { people } = await api('people');
+        _people = people;
+        renderPeople();
+      } catch (e) {
+        toast('Could not load: ' + e.message);
+      }
+    }
+
+    function renderPeople() {
+      const grid = document.getElementById('people-grid');
+      const empty = document.getElementById('empty-state');
+      if (_people.length === 0) {
+        grid.innerHTML = '';
+        empty.classList.remove('hidden');
+      } else {
+        empty.classList.add('hidden');
+        grid.innerHTML = _people.map(personCardHTML).join('');
+      }
+    }
+
+    function personCardHTML(p) {
+      const color = meterColor(p.fill);
+      const fillLabel = p.fill === 0 ? '0%' : p.fill + '%';
+      return `<div class="person-card" onclick="openDetail('${esc(p.id)}')">
+        <div class="pc-top">
+          <span class="pc-emoji">${esc(p.emoji)}</span>
+          <span class="pc-fill-badge" style="color:${color}">${fillLabel}</span>
+        </div>
+        <div class="pc-name">${esc(p.name)}</div>
+        ${p.relation ? `<div class="pc-relation">${esc(p.relation)}</div>` : ''}
+        <div class="meter-bar">
+          <div class="meter-fill" style="width:${p.fill}%;background:${color}"></div>
+        </div>
+        <button class="pc-log-btn" onclick="event.stopPropagation();openLogModal('${esc(p.id)}')">＋ Log worry</button>
+      </div>`;
+    }
+
+    // ── Detail ──
+    async function openDetail(personId) {
+      _detailPerson = _people.find(p => p.id === personId);
+      if (!_detailPerson) return;
+
+      document.getElementById('detail-overlay').classList.add('show');
+      renderDetailHeader(_detailPerson);
+      document.getElementById('worry-list').innerHTML = '<div class="empty-worries">Loading…</div>';
+
+      if (!_worries[personId]) {
+        try {
+          const { worries } = await api('worries', { params: { person_id: personId } });
+          _worries[personId] = worries;
+        } catch (e) {
+          toast(e.message);
+          _worries[personId] = [];
+        }
+      }
+      renderDetailStats();
+      renderWorryList();
+    }
+
+    function closeDetail() {
+      document.getElementById('detail-overlay').classList.remove('show');
+      _detailPerson = null;
+    }
+
+    function renderDetailHeader(p) {
+      document.getElementById('detail-emoji').textContent = p.emoji;
+      document.getElementById('detail-name').textContent = p.name;
+      document.getElementById('detail-relation').textContent = p.relation || '';
+      updateDetailMeter(p.fill);
+    }
+
+    function updateDetailMeter(fill) {
+      const color = meterColor(fill);
+      const arc = document.getElementById('meter-arc-fill');
+      const pct = document.getElementById('meter-fill-pct');
+      arc.setAttribute('d', meterArcPath(fill / 100));
+      arc.style.stroke = color;
+      pct.textContent = fill;
+      pct.style.fill = color;
+    }
+
+    function renderDetailStats() {
+      if (!_detailPerson) return;
+      const worries = _worries[_detailPerson.id] || [];
+      const total = worries.length;
+      const didntHappen = worries.filter(w => w.outcome === 'didnt_happen').length;
+      const resolved = worries.filter(w => w.outcome).length;
+      const pct = resolved > 0 ? Math.round(didntHappen / resolved * 100) + '%' : '—';
+      const avg = total > 0 ? (worries.reduce((s, w) => s + w.intensity, 0) / total).toFixed(1) : '—';
+      document.getElementById('stat-total').textContent = total || '—';
+      document.getElementById('stat-never').textContent = pct;
+      document.getElementById('stat-avg').textContent = avg;
+    }
+
+    const CAT_EMOJI = { health:'🏥', money:'💰', relationships:'💝', work:'💼', family:'👨‍👩‍👧', world:'🌍', home:'🏠', other:'❓' };
+    const CAT_LABEL = { health:'Health', money:'Money', relationships:'Relationships', work:'Work', family:'Family', world:'World', home:'Home', other:'Other' };
+
+    function renderWorryList() {
+      if (!_detailPerson) return;
+      const worries = _worries[_detailPerson.id] || [];
+      const list = document.getElementById('worry-list');
+      const title = document.getElementById('worry-list-title');
+      title.textContent = 'WORRY LOG' + (worries.length ? ` · ${worries.length}` : '');
+
+      if (worries.length === 0) {
+        list.innerHTML = '<div class="empty-worries">No worries logged yet</div>';
+        return;
+      }
+      list.innerHTML = worries.map(worryRowHTML).join('');
+    }
+
+    function worryRowHTML(w) {
+      const date = new Date(w.logged_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      const intColor = w.intensity <= 3 ? '#22C55E' : w.intensity <= 6 ? '#F59E0B' : w.intensity <= 8 ? '#F97316' : '#EF4444';
+
+      let outcomeHTML;
+      if (w.outcome === 'happened') {
+        outcomeHTML = '<span class="outcome-badge outcome-happened">Happened</span>';
+      } else if (w.outcome === 'didnt_happen') {
+        outcomeHTML = '<span class="outcome-badge outcome-didnt">Didn\'t happen</span>';
+      } else {
+        outcomeHTML = `<div class="outcome-btns">
+          <button onclick="resolveWorry('${esc(w.id)}','happened')">Happened</button>
+          <button onclick="resolveWorry('${esc(w.id)}','didnt_happen')">Didn't</button>
+        </div>`;
+      }
+
+      return `<div class="worry-row" data-id="${esc(w.id)}">
+        <span class="worry-cat-emoji">${CAT_EMOJI[w.category] || '❓'}</span>
+        <div class="worry-row-text">
+          <div class="worry-row-main">
+            <span class="worry-intensity" style="color:${intColor}">${w.intensity}/10</span>
+            <span class="worry-cat-label">${CAT_LABEL[w.category] || w.category}</span>
+          </div>
+          ${w.description ? `<div class="worry-desc">${esc(w.description)}</div>` : ''}
+          <div class="worry-date">${date}</div>
+        </div>
+        <div class="worry-row-right">
+          ${outcomeHTML}
+          <button class="worry-del-btn" onclick="deleteWorry('${esc(w.id)}')" title="Delete">✕</button>
+        </div>
+      </div>`;
+    }
+
+    async function resolveWorry(id, outcome) {
+      try {
+        await api('resolve', { body: { id, outcome } });
+        if (_detailPerson && _worries[_detailPerson.id]) {
+          const w = _worries[_detailPerson.id].find(x => x.id === id);
+          if (w) w.outcome = outcome;
+        }
+        await refreshFill(_detailPerson?.id);
+        renderDetailStats();
+        renderWorryList();
+      } catch (e) { toast(e.message) }
+    }
+
+    async function deleteWorry(id) {
+      try {
+        await api('delete-worry', { body: { id } });
+        if (_detailPerson && _worries[_detailPerson.id]) {
+          _worries[_detailPerson.id] = _worries[_detailPerson.id].filter(w => w.id !== id);
+        }
+        await refreshFill(_detailPerson?.id);
+        renderDetailStats();
+        renderWorryList();
+      } catch (e) { toast(e.message) }
+    }
+
+    async function refreshFill(personId) {
+      if (!personId) return;
+      try {
+        const { people } = await api('people');
+        _people = people;
+        const updated = _people.find(p => p.id === personId);
+        if (updated) {
+          if (_detailPerson?.id === personId) {
+            _detailPerson = updated;
+            updateDetailMeter(updated.fill);
+          }
+        }
+        renderPeople();
+      } catch (e) { /* ignore */ }
+    }
+
+    function editCurrentPerson() {
+      if (_detailPerson) openEditPerson(_detailPerson);
+    }
+
+    // ── Log worry modal ──
+    function openLogFromDetail() {
+      if (_detailPerson) openLogModal(_detailPerson.id);
+    }
+
+    function openLogModal(personId) {
+      _logForPerson = personId ? (_people.find(p => p.id === personId) || null) : null;
+      document.getElementById('log-modal').classList.add('show');
+      renderLogModal();
+    }
+
+    function closeLogModal() {
+      document.getElementById('log-modal').classList.remove('show');
+      _logForPerson = null;
+    }
+
+    function renderLogModal() {
+      const forRow = document.getElementById('log-for-row');
+      const picker = document.getElementById('log-person-picker');
+      const nameEl = document.getElementById('log-for-name');
+
+      if (_logForPerson) {
+        forRow.style.display = 'block';
+        nameEl.textContent = _logForPerson.emoji + ' ' + _logForPerson.name;
+        picker.innerHTML = '';
+      } else {
+        forRow.style.display = 'none';
+        picker.innerHTML = `<div class="log-picker-label">Who is worried?</div>` +
+          _people.map(p => `<button class="person-pick-btn" onclick="selectLogPerson('${esc(p.id)}')">${esc(p.emoji)} ${esc(p.name)}${p.relation ? ' <span style="color:var(--muted);font-weight:400;font-size:12px">· ' + esc(p.relation) + '</span>' : ''}</button>`).join('');
+      }
+
+      document.querySelectorAll('.cat-chip').forEach(c => c.classList.remove('selected'));
+      document.getElementById('intensity-slider').value = 5;
+      document.getElementById('intensity-val').textContent = '5';
+      document.getElementById('intensity-desc').textContent = 'moderate';
+      document.getElementById('log-description').value = '';
+      document.getElementById('log-error').textContent = '';
+      document.getElementById('save-worry-btn').disabled = false;
+    }
+
+    function selectLogPerson(id) {
+      _logForPerson = _people.find(p => p.id === id) || null;
+      renderLogModal();
+    }
+
+    function selectCat(el) {
+      document.querySelectorAll('.cat-chip').forEach(c => c.classList.remove('selected'));
+      el.classList.add('selected');
+    }
+
+    const INTENSITY_LABELS = ['','barely there','barely there','gnawing','gnawing','moderate','moderate','consuming','consuming','overwhelming','overwhelming'];
+    function updateIntensity() {
+      const v = document.getElementById('intensity-slider').value;
+      document.getElementById('intensity-val').textContent = v;
+      document.getElementById('intensity-desc').textContent = INTENSITY_LABELS[v] || '';
+    }
+
+    async function saveWorry() {
+      if (!_logForPerson) {
+        document.getElementById('log-error').textContent = 'Select a person first';
+        return;
+      }
+      const catEl = document.querySelector('.cat-chip.selected');
+      if (!catEl) {
+        document.getElementById('log-error').textContent = 'Select a category';
+        return;
+      }
+      const category = catEl.dataset.cat;
+      const intensity = parseInt(document.getElementById('intensity-slider').value);
+      const description = document.getElementById('log-description').value.trim();
+
+      const btn = document.getElementById('save-worry-btn');
+      btn.disabled = true;
+
+      try {
+        const { worry } = await api('log-worry', { body: { person_id: _logForPerson.id, category, intensity, description } });
+        if (!_worries[_logForPerson.id]) _worries[_logForPerson.id] = [];
+        _worries[_logForPerson.id].unshift(worry);
+
+        const savedFor = _logForPerson;
+        closeLogModal();
+        toast('Worry logged');
+        await refreshFill(savedFor.id);
+        if (_detailPerson?.id === savedFor.id) {
+          renderDetailStats();
+          renderWorryList();
+        }
+      } catch (e) {
+        document.getElementById('log-error').textContent = e.message;
+        btn.disabled = false;
+      }
+    }
+
+    // ── Add/edit person modal ──
+    function openAddPerson() {
+      _editPerson = null;
+      document.getElementById('person-modal-title').textContent = 'Add person';
+      document.getElementById('person-name-inp').value = '';
+      document.getElementById('person-relation-inp').value = '';
+      document.getElementById('person-emoji-inp').value = '😟';
+      document.getElementById('person-error').textContent = '';
+      document.getElementById('del-person-btn').style.display = 'none';
+      document.getElementById('save-person-btn').disabled = false;
+      document.getElementById('person-modal').classList.add('show');
+      setTimeout(() => document.getElementById('person-name-inp').focus(), 300);
+    }
+
+    function openEditPerson(person) {
+      _editPerson = person;
+      document.getElementById('person-modal-title').textContent = 'Edit person';
+      document.getElementById('person-name-inp').value = person.name;
+      document.getElementById('person-relation-inp').value = person.relation || '';
+      document.getElementById('person-emoji-inp').value = person.emoji || '😟';
+      document.getElementById('person-error').textContent = '';
+      document.getElementById('del-person-btn').style.display = 'block';
+      document.getElementById('save-person-btn').disabled = false;
+      document.getElementById('person-modal').classList.add('show');
+    }
+
+    function closePersonModal() {
+      document.getElementById('person-modal').classList.remove('show');
+      _editPerson = null;
+    }
+
+    async function savePerson() {
+      const name = document.getElementById('person-name-inp').value.trim();
+      const relation = document.getElementById('person-relation-inp').value.trim();
+      const emoji = document.getElementById('person-emoji-inp').value.trim() || '😟';
+      if (!name) { document.getElementById('person-error').textContent = 'Name is required'; return; }
+
+      const btn = document.getElementById('save-person-btn');
+      btn.disabled = true;
+
+      try {
+        if (_editPerson) {
+          await api('edit-person', { body: { id: _editPerson.id, name, relation, emoji } });
+          const idx = _people.findIndex(p => p.id === _editPerson.id);
+          if (idx >= 0) _people[idx] = { ..._people[idx], name, relation, emoji };
+          if (_detailPerson?.id === _editPerson.id) {
+            _detailPerson = _people[idx];
+            renderDetailHeader(_detailPerson);
+          }
+        } else {
+          const { person } = await api('add-person', { body: { name, relation, emoji } });
+          _people.push(person);
+        }
+        closePersonModal();
+        renderPeople();
+      } catch (e) {
+        document.getElementById('person-error').textContent = e.message;
+        btn.disabled = false;
+      }
+    }
+
+    async function deletePerson() {
+      if (!_editPerson) return;
+      if (!confirm(`Delete ${_editPerson.name} and all their worry entries? This can't be undone.`)) return;
+      try {
+        await api('delete-person', { body: { id: _editPerson.id } });
+        const id = _editPerson.id;
+        _people = _people.filter(p => p.id !== id);
+        delete _worries[id];
+        closePersonModal();
+        if (_detailPerson?.id === id) closeDetail();
+        renderPeople();
+        toast('Deleted');
+      } catch (e) {
+        document.getElementById('person-error').textContent = e.message;
+      }
+    }
+
+    // ── Theme ──
+    function setLight(on) {
+      document.body.classList.toggle('light', on);
+      localStorage.setItem('wm-light', on ? '1' : '0');
+      document.getElementById('themeEmoji').textContent = on ? '🌙' : '☀️';
+      document.getElementById('themeLabel').textContent = on ? 'Dark mode' : 'Light mode';
+    }
+
+    // ── Toast ──
+    function toast(msg) {
+      const el = document.createElement('div');
+      el.className = 'toast';
+      el.textContent = msg;
+      document.getElementById('toasts').appendChild(el);
+      setTimeout(() => el.remove(), 2300);
+    }
+
+    // ── User menu ──
+    document.getElementById('user-btn').addEventListener('click', e => {
+      e.stopPropagation();
+      document.getElementById('config-card').classList.toggle('show');
+    });
+    document.addEventListener('click', () => document.getElementById('config-card').classList.remove('show'));
+
+    // ── Boot ──
+    window._bootApp = async function (user) {
+      document.getElementById('user-menu-name').textContent = user.user_metadata?.full_name || 'Signed in';
+      document.getElementById('user-menu-email').textContent = user.email || '';
+
+      const light = localStorage.getItem('wm-light') === '1';
+      document.getElementById('lightToggle').checked = light;
+      setLight(light);
+
+      await loadPeople();
+    };
+  </script>
+
+</body>
+</html>
