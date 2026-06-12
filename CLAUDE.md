@@ -36,7 +36,6 @@ Set in Vercel dashboard:
 |----------|-------|
 | `SUPABASE_URL` | `https://nfvxmkknkxysjksyhbek.supabase.co` |
 | `SUPABASE_ANON_KEY` | from Supabase → Settings → API |
-| `SUPABASE_SERVICE_ROLE_KEY` | from Supabase → Settings → API |
 
 ## Supabase Tables (`wm_` prefix)
 
